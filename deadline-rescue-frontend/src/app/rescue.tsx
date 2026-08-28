@@ -3,14 +3,18 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput } from 
 
 type ScheduleItem = { task: string; hours: number };
 type Schedule = { [day: string]: ScheduleItem[] };
+type UnscheduledItem = { task: string; hours_remaining: number };
 
 export default function Rescue() {
   const [dailyHours, setDailyHours] = useState("2");
   const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const [unscheduled, setUnscheduled] = useState<UnscheduledItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dismissedWarning, setDismissedWarning] = useState(false);
 
-  const handleRescue = async () => {
+  const runRescue = async (allowOverflow: boolean) => {
     setLoading(true);
+    setDismissedWarning(false);
     try {
       const response = await fetch("http://localhost:8000/rescue", {
         method: "POST",
@@ -18,6 +22,7 @@ export default function Rescue() {
         body: JSON.stringify({
           daily_available_hours: parseFloat(dailyHours),
           num_days: 7,
+          allow_overflow: allowOverflow,
         }),
       });
 
@@ -25,8 +30,9 @@ export default function Rescue() {
         throw new Error("Rescue request failed");
       }
 
-      const data: Schedule = await response.json();
-      setSchedule(data);
+      const data = await response.json();
+      setSchedule(data.schedule);
+      setUnscheduled(data.unscheduled);
     } catch (error) {
       console.error(error);
     } finally {
@@ -35,7 +41,7 @@ export default function Rescue() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <Text style={styles.header}>Rescue My Plan</Text>
 
       <Text style={styles.label}>Hours available per day</Text>
@@ -46,11 +52,36 @@ export default function Rescue() {
         keyboardType="numeric"
       />
 
-      <TouchableOpacity style={styles.rescueButton} onPress={handleRescue}>
+      <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
         <Text style={styles.rescueButtonText}>
           {loading ? "Calculating..." : "Rescue My Plan"}
         </Text>
       </TouchableOpacity>
+
+      {unscheduled.length > 0 && !dismissedWarning && (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>⚠️ Some work couldn't be scheduled in time:</Text>
+          {unscheduled.map((item, index) => (
+            <Text key={index} style={styles.warningText}>
+              • {item.task} — {item.hours_remaining}h still needed
+            </Text>
+          ))}
+          <View style={styles.warningActions}>
+            <TouchableOpacity style={styles.warningButton} onPress={() => runRescue(true)}>
+              <Text style={styles.warningButtonText}>Allow overflow past deadline</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.warningButton, styles.dismissButton]}
+              onPress={() => setDismissedWarning(true)}
+            >
+              <Text style={styles.warningButtonText}>Ignore for now</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.warningHint}>
+            Or increase your available hours above and tap Rescue My Plan again.
+          </Text>
+        </View>
+      )}
 
       {schedule && (
         <View style={styles.results}>
@@ -95,6 +126,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rescueButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  warningBox: {
+    backgroundColor: "#fff4e5",
+    borderColor: "#ffb84d",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 16,
+  },
+  warningTitle: { fontWeight: "700", color: "#8a5a00", marginBottom: 8 },
+  warningText: { color: "#8a5a00", marginBottom: 4 },
+  warningActions: { marginTop: 10, gap: 8 },
+  warningButton: {
+    backgroundColor: "#8a5a00",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  dismissButton: { backgroundColor: "#999", marginTop: 8 },
+  warningButtonText: { color: "#fff", fontWeight: "600" },
+  warningHint: { marginTop: 8, fontSize: 12, color: "#8a5a00", fontStyle: "italic" },
   results: { marginTop: 24 },
   dayBlock: {
     backgroundColor: "#f0f0f0",

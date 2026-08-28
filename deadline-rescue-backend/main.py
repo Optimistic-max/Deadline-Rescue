@@ -62,6 +62,7 @@ def urgency_score(task: Task) -> float:
 class RescueRequest(BaseModel):
     daily_available_hours: float
     num_days: int = 7
+    allow_overflow: bool = False
 
 
 @app.post("/rescue")
@@ -70,11 +71,13 @@ def rescue_plan(request: RescueRequest):
 
     schedule = {i: [] for i in range(request.num_days)}
     hours_left_today = [request.daily_available_hours] * request.num_days
+    unscheduled = []
 
     for task in sorted_tasks:
         hours_needed = max(task.estimated_hours - task.hours_completed, 0)
         days_until_deadline = min((task.deadline - date.today()).days, request.num_days)
 
+        # Phase 1: try to fit within the task's own deadline
         for day in range(days_until_deadline):
             if hours_needed <= 0:
                 break
@@ -84,4 +87,19 @@ def rescue_plan(request: RescueRequest):
                 hours_left_today[day] -= allocate
                 hours_needed -= allocate
 
-    return schedule
+        # Phase 2: if overflow is allowed, keep placing leftover hours in later days
+        if hours_needed > 0 and request.allow_overflow:
+            for day in range(days_until_deadline, request.num_days):
+                if hours_needed <= 0:
+                    break
+                allocate = min(hours_left_today[day], hours_needed)
+                if allocate > 0:
+                    schedule[day].append({"task": task.title, "hours": allocate})
+                    hours_left_today[day] -= allocate
+                    hours_needed -= allocate
+
+        # Anything still left over is genuinely unscheduled
+        if hours_needed > 0:
+            unscheduled.append({"task": task.title, "hours_remaining": hours_needed})
+
+    return {"schedule": schedule, "unscheduled": unscheduled}

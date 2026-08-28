@@ -11,6 +11,7 @@ export default function Rescue() {
   const [unscheduled, setUnscheduled] = useState<UnscheduledItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [dismissedWarning, setDismissedWarning] = useState(false);
+  const [numDays, setNumDays] = useState("7");
 
   const runRescue = async (allowOverflow: boolean) => {
     setLoading(true);
@@ -21,7 +22,7 @@ export default function Rescue() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           daily_available_hours: parseFloat(dailyHours),
-          num_days: 7,
+          num_days: parseInt(numDays),
           allow_overflow: allowOverflow,
         }),
       });
@@ -51,7 +52,13 @@ export default function Rescue() {
         onChangeText={setDailyHours}
         keyboardType="numeric"
       />
-
+      <Text style={styles.label}>Planning window (days)</Text>
+      <TextInput
+        style={styles.input}
+        value={numDays}
+        onChangeText={setNumDays}
+        keyboardType="numeric"
+      />
       <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
         <Text style={styles.rescueButtonText}>
           {loading ? "Calculating..." : "Rescue My Plan"}

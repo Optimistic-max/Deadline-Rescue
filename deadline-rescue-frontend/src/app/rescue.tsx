@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, ActivityIndicator, Alert } from "react-native";
 import Purchases from "react-native-purchases";
 import { usePremiumStatus } from "@/hooks/use-premium-status";
+import { API_BASE_URL } from "@/constants/api";
 
 type ScheduleItem = { task: string; hours: number };
 type Schedule = { [day: string]: ScheduleItem[] };
@@ -77,7 +78,7 @@ function RescueEngine() {
     setLoading(true);
     setDismissedWarning(false);
     try {
-      const response = await fetch("http://localhost:8000/rescue", {
+      const response = await fetch(`${API_BASE_URL}/rescue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -149,7 +150,7 @@ function RescueEngine() {
             </TouchableOpacity>
           </View>
           <Text style={styles.warningHint}>
-            Or increase your available hours above and tap Rescue My Plan again.
+            Or increase your available hours or planning window above and tap Rescue My Plan again.
           </Text>
         </View>
       )}

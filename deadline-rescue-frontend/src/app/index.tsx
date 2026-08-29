@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { API_BASE_URL } from "@/constants/api";
 
 type Task = {
   id: number;
@@ -18,7 +19,7 @@ export default function Home() {
 
   const fetchTasks = () => {
     setLoading(true);
-    fetch("http://localhost:8000/tasks")
+    fetch(`${API_BASE_URL}/tasks`)
       .then((response) => response.json())
       .then((data) => {
         setTasks(data);
@@ -47,7 +48,7 @@ export default function Home() {
           style: "destructive",
           onPress: async () => {
             try {
-              await fetch(`http://localhost:8000/tasks/${taskId}`, {
+              await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
                 method: "DELETE",
               });
               fetchTasks();

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { usePremiumStatus } from "@/hooks/use-premium-status";
+import { API_BASE_URL } from "@/constants/api";
 
 export default function AddDeadline() {
   const router = useRouter();
@@ -21,7 +22,7 @@ const handleSubmit = async () => {
   }
   if (!isPremium) {
     try {
-      const tasksResponse = await fetch("http://localhost:8000/tasks");
+      const tasksResponse = await fetch(`${API_BASE_URL}/tasks`);
       const currentTasks = await tasksResponse.json();
       if (currentTasks.length >= FREE_TASK_LIMIT) {
         Alert.alert(
@@ -34,7 +35,7 @@ const handleSubmit = async () => {
       console.error("Error checking task count:", error);
     }
   }
-  
+
   const newTask = {
     title,
     course,
@@ -45,7 +46,7 @@ const handleSubmit = async () => {
   };
 
   try {
-    const response = await fetch("http://localhost:8000/tasks", {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newTask),

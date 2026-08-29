@@ -76,6 +76,13 @@ export default function Home() {
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id.toString()}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No deadlines yet</Text>
+            <Text style={styles.emptyStateSubtext}>Tap Explore to add your first one</Text>
+          </View>
+        }
+
         renderItem={({ item }) => (
           <View style={styles.taskCard}>
             <View style={styles.taskInfo}>
@@ -99,6 +106,9 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#000" },
+  emptyState: { alignItems: "center", marginTop: 60 },
+  emptyStateText: { fontSize: 18, fontWeight: "600", color: "#333", marginBottom: 6 },
+  emptyStateSubtext: { fontSize: 14, color: "#888" },
   taskCard: {
     backgroundColor: "#f0f0f0",
     padding: 15,

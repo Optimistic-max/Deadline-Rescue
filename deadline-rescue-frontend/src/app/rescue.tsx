@@ -24,8 +24,6 @@ function Paywall() {
       }
 
       await Purchases.purchasePackage(monthlyPackage);
-      // No need to manually update state here — the CustomerInfo listener
-      // in usePremiumStatus will pick up the change automatically.
     } catch (error: any) {
       if (!error.userCancelled) {
         Alert.alert("Purchase failed", "Something went wrong. Please try again.");
@@ -39,16 +37,17 @@ function Paywall() {
   return (
     <View style={styles.paywallContainer}>
       <Text style={styles.paywallEmoji}>🚀</Text>
-      <Text style={styles.paywallTitle}>Unlock Rescue My Plan</Text>
+      <Text style={styles.paywallTitle}>Premium Planning</Text>
       <Text style={styles.paywallSubtitle}>
-        Get the smart recovery engine that automatically rebuilds your schedule
-        when you fall behind — plus unlimited tasks.
+        Go beyond basic tracking with a full intelligent planning system built
+        for students juggling real deadlines.
       </Text>
 
       <View style={styles.paywallFeatures}>
-        <Text style={styles.paywallFeature}>✓ Automatic urgency-based scheduling</Text>
-        <Text style={styles.paywallFeature}>✓ Overload detection & recovery plans</Text>
+        <Text style={styles.paywallFeature}>✓ Smart Rescue engine — auto-rebuilds your schedule when you fall behind</Text>
         <Text style={styles.paywallFeature}>✓ Unlimited tracked deadlines</Text>
+        <Text style={styles.paywallFeature}>✓ Adjustable planning windows</Text>
+        <Text style={styles.paywallFeature}>✓ Overload detection & recovery options</Text>
       </View>
 
       <TouchableOpacity
@@ -59,7 +58,7 @@ function Paywall() {
         {purchasing ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.purchaseButtonText}>Unlock for $9.99/month</Text>
+          <Text style={styles.purchaseButtonText}>Upgrade for $9.99/month</Text>
         )}
       </TouchableOpacity>
     </View>

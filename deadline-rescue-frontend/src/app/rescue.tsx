@@ -1,17 +1,78 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, ActivityIndicator, Alert } from "react-native";
+import Purchases from "react-native-purchases";
+import { usePremiumStatus } from "@/hooks/use-premium-status";
 
 type ScheduleItem = { task: string; hours: number };
 type Schedule = { [day: string]: ScheduleItem[] };
 type UnscheduledItem = { task: string; hours_remaining: number };
 
-export default function Rescue() {
+function Paywall() {
+  const [purchasing, setPurchasing] = useState(false);
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    try {
+      const offerings = await Purchases.getOfferings();
+      const monthlyPackage = offerings.current?.availablePackages.find(
+        (pkg) => pkg.identifier === "$rc_monthly" || pkg.product.identifier === "monthly"
+      );
+
+      if (!monthlyPackage) {
+        Alert.alert("Error", "Could not find the premium package. Please try again later.");
+        return;
+      }
+
+      await Purchases.purchasePackage(monthlyPackage);
+      // No need to manually update state here — the CustomerInfo listener
+      // in usePremiumStatus will pick up the change automatically.
+    } catch (error: any) {
+      if (!error.userCancelled) {
+        Alert.alert("Purchase failed", "Something went wrong. Please try again.");
+        console.error(error);
+      }
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  return (
+    <View style={styles.paywallContainer}>
+      <Text style={styles.paywallEmoji}>🚀</Text>
+      <Text style={styles.paywallTitle}>Unlock Rescue My Plan</Text>
+      <Text style={styles.paywallSubtitle}>
+        Get the smart recovery engine that automatically rebuilds your schedule
+        when you fall behind — plus unlimited tasks.
+      </Text>
+
+      <View style={styles.paywallFeatures}>
+        <Text style={styles.paywallFeature}>✓ Automatic urgency-based scheduling</Text>
+        <Text style={styles.paywallFeature}>✓ Overload detection & recovery plans</Text>
+        <Text style={styles.paywallFeature}>✓ Unlimited tracked deadlines</Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.purchaseButton}
+        onPress={handlePurchase}
+        disabled={purchasing}
+      >
+        {purchasing ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.purchaseButtonText}>Unlock for $9.99/month</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function RescueEngine() {
   const [dailyHours, setDailyHours] = useState("2");
+  const [numDays, setNumDays] = useState("7");
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [unscheduled, setUnscheduled] = useState<UnscheduledItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [dismissedWarning, setDismissedWarning] = useState(false);
-  const [numDays, setNumDays] = useState("7");
 
   const runRescue = async (allowOverflow: boolean) => {
     setLoading(true);
@@ -51,14 +112,18 @@ export default function Rescue() {
         value={dailyHours}
         onChangeText={setDailyHours}
         keyboardType="numeric"
+        placeholderTextColor="#999"
       />
+
       <Text style={styles.label}>Planning window (days)</Text>
       <TextInput
         style={styles.input}
         value={numDays}
         onChangeText={setNumDays}
         keyboardType="numeric"
+        placeholderTextColor="#999"
       />
+
       <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
         <Text style={styles.rescueButtonText}>
           {loading ? "Calculating..." : "Rescue My Plan"}
@@ -113,8 +178,23 @@ export default function Rescue() {
   );
 }
 
+export default function Rescue() {
+  const { isPremium, loading } = usePremiumStatus();
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#6c5ce7" />
+      </View>
+    );
+  }
+
+  return isPremium ? <RescueEngine /> : <Paywall />;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#000" },
   label: { fontSize: 14, marginBottom: 4, fontWeight: "600", color: "#000" },
   input: {
@@ -169,4 +249,25 @@ const styles = StyleSheet.create({
   },
   taskText: { color: "#000", fontSize: 15 },
   hoursText: { color: "#6c5ce7", fontWeight: "600" },
+  paywallContainer: {
+    flex: 1,
+    padding: 30,
+    paddingTop: 100,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  paywallEmoji: { fontSize: 60, marginBottom: 16 },
+  paywallTitle: { fontSize: 26, fontWeight: "bold", color: "#000", textAlign: "center", marginBottom: 12 },
+  paywallSubtitle: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 24, lineHeight: 22 },
+  paywallFeatures: { alignSelf: "stretch", marginBottom: 30 },
+  paywallFeature: { fontSize: 15, color: "#333", marginBottom: 10 },
+  purchaseButton: {
+    backgroundColor: "#6c5ce7",
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    alignSelf: "stretch",
+    alignItems: "center",
+  },
+  purchaseButtonText: { color: "#fff", fontSize: 17, fontWeight: "700" },
 });

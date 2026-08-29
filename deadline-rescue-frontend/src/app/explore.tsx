@@ -57,13 +57,13 @@ const handleSubmit = async () => {
       <Text style={styles.header}>Add Deadline</Text>
 
       <Text style={styles.label}>Title</Text>
-      <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g. Math Assignment" />
+      <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g. Math Assignment" placeholderTextColor="#999"/>
 
       <Text style={styles.label}>Course</Text>
-      <TextInput style={styles.input} value={course} onChangeText={setCourse} placeholder="e.g. Math 210" />
+      <TextInput style={styles.input} value={course} onChangeText={setCourse} placeholder="e.g. Math 210" placeholderTextColor="#999" />
 
       <Text style={styles.label}>Deadline (YYYY-MM-DD)</Text>
-      <TextInput style={styles.input} value={deadline} onChangeText={setDeadline} placeholder="2026-09-02" />
+      <TextInput style={styles.input} value={deadline} onChangeText={setDeadline} placeholder="2026-09-02" placeholderTextColor="#999"/>
 
       <Text style={styles.label}>Estimated Hours</Text>
       <TextInput
@@ -72,6 +72,7 @@ const handleSubmit = async () => {
         onChangeText={setEstimatedHours}
         placeholder="e.g. 3"
         keyboardType="numeric"
+        placeholderTextColor="#999"
       />
 
       <Text style={styles.label}>Priority</Text>

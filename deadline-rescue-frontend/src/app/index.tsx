@@ -80,7 +80,7 @@ export default function Home() {
             <View style={styles.taskInfo}>
               <Text style={styles.taskTitle}>{item.title}</Text>
               <Text>{item.course} • Due: {item.deadline}</Text>
-              <Text>Priority: {item.priority}</Text>
+              <Text>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
             </View>
             <TouchableOpacity
               style={styles.deleteButton}

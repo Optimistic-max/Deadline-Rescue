@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useFocusEffect } from "expo-router";
 
 type Task = {
@@ -36,6 +36,31 @@ export default function Home() {
     }, [])
   );
 
+  const handleDelete = (taskId: number, taskTitle: string) => {
+    Alert.alert(
+      "Delete task?",
+      `Are you sure you want to delete "${taskTitle}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await fetch(`http://localhost:8000/tasks/${taskId}`, {
+                method: "DELETE",
+              });
+              fetchTasks();
+            } catch (error) {
+              console.error("Error deleting task:", error);
+              Alert.alert("Error", "Could not delete task.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -52,9 +77,17 @@ export default function Home() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.taskCard}>
-            <Text style={styles.taskTitle}>{item.title}</Text>
-            <Text>{item.course} • Due: {item.deadline}</Text>
-            <Text>Priority: {item.priority}</Text>
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>{item.title}</Text>
+              <Text>{item.course} • Due: {item.deadline}</Text>
+              <Text>Priority: {item.priority}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDelete(item.id, item.title)}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </View>
         )}
       />
@@ -70,6 +103,18 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
+  taskInfo: { flex: 1 },
   taskTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
+  deleteButton: {
+    backgroundColor: "#ff4d4d",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  deleteButtonText: { color: "#fff", fontWeight: "600" },
 });

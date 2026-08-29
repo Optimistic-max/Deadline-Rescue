@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { usePremiumStatus } from "@/hooks/use-premium-status";
 
 export default function AddDeadline() {
   const router = useRouter();
@@ -10,13 +11,30 @@ export default function AddDeadline() {
   const [deadline, setDeadline] = useState(""); // format: YYYY-MM-DD
   const [estimatedHours, setEstimatedHours] = useState("");
   const [priority, setPriority] = useState("medium");
+  const { isPremium } = usePremiumStatus();
+  const FREE_TASK_LIMIT = 5;
 
 const handleSubmit = async () => {
   if (!title || !course || !deadline || !estimatedHours) {
     Alert.alert("Missing info", "Please fill in all fields.");
     return;
   }
-
+  if (!isPremium) {
+    try {
+      const tasksResponse = await fetch("http://localhost:8000/tasks");
+      const currentTasks = await tasksResponse.json();
+      if (currentTasks.length >= FREE_TASK_LIMIT) {
+        Alert.alert(
+          "Free limit reached",
+          `You can track up to ${FREE_TASK_LIMIT} tasks on the free plan. Upgrade to Premium for unlimited tasks.`
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking task count:", error);
+    }
+  }
+  
   const newTask = {
     title,
     course,

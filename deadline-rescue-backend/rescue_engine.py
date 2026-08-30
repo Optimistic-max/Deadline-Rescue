@@ -42,7 +42,7 @@ def compute_rescue_plan(
 
     for task in sorted_tasks:
         hours_needed = max(task.estimated_hours - task.hours_completed, 0)
-        days_until_deadline = min((task.deadline - today).days, num_days)
+        days_until_deadline = min(max((task.deadline - today).days, 0), num_days)
 
         for day in range(days_until_deadline):
             if hours_needed <= 0:

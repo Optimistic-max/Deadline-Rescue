@@ -13,6 +13,23 @@ type Task = {
   priority: string;
 };
 
+function getTaskLabel(task: Task): { icon: string; text: string; color: string } | null {
+  if (task.hours_completed >= task.estimated_hours) return null; // completed, no label
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadline = new Date(task.deadline);
+  const daysLeft = Math.round((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    return { icon: "⚠️", text: "Overdue", color: "#ff4d4d" };
+  }
+  if (task.hours_completed === 0 && daysLeft <= 2) {
+    return { icon: "⏰", text: "Due soon, not started", color: "#e67e22" };
+  }
+  return null;
+}
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +141,17 @@ export default function Home() {
             <Text style={styles.taskTitle}>{item.title}</Text>
             <Text>{item.course} • Due: {item.deadline}</Text>
             <Text>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
+            {(() => {
+              const label = getTaskLabel(item);
+              return label ? (
+                <Text style={[styles.taskLabel, { color: label.color }]}>
+                  {label.icon} {label.text}
+                </Text>
+              ) : null;
+            })()}
+            {item.hours_completed >= item.estimated_hours && (
+              <Text style={styles.completeBadge}>✓ Completed</Text>
+            )}
             {item.hours_completed >= item.estimated_hours && (
               <Text style={styles.completeBadge}>✓ Completed</Text>
             )}
@@ -168,6 +196,7 @@ const styles = StyleSheet.create({
   },
   taskInfo: { flex: 1 },
   taskTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
+  taskLabel: { fontWeight: "700", marginTop: 4 },
   
   actionButtons: { flexDirection: "column", gap: 6 },
   completeButton: {

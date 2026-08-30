@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from "react
 import { useFocusEffect } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemeMode } from "@/hooks/use-theme-mode";
 
 type Task = {
   id: number;
@@ -15,7 +16,7 @@ type Task = {
 };
 
 function getTaskLabel(task: Task): { icon: string; text: string; color: string } | null {
-  if (task.hours_completed >= task.estimated_hours) return null; // completed, no label
+  if (task.hours_completed >= task.estimated_hours) return null;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -32,6 +33,7 @@ function getTaskLabel(task: Task): { icon: string; text: string; color: string }
 }
 
 export default function Home() {
+  const { mode, colors, toggleMode } = useThemeMode();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [overdueCount, setOverdueCount] = useState(0);
@@ -64,6 +66,7 @@ export default function Home() {
       fetchTasks();
     }, [])
   );
+
   const handleComplete = async (taskId: number) => {
     try {
       await fetch(`${API_BASE_URL}/tasks/${taskId}/complete`, {
@@ -75,6 +78,7 @@ export default function Home() {
       Alert.alert("Error", "Could not mark task complete.");
     }
   };
+
   const handleDelete = (taskId: number, taskTitle: string) => {
     Alert.alert(
       "Delete task?",
@@ -100,18 +104,27 @@ export default function Home() {
     );
   };
 
-
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading tasks...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>Loading tasks...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Deadlines</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <Text style={[styles.header, { color: colors.text }]}>My Deadlines</Text>
+        <TouchableOpacity onPress={toggleMode} style={styles.themeToggle}>
+          <Ionicons
+            name={mode === "light" ? "sunny" : "moon"}
+            size={20}
+            color={mode === "light" ? "#f39c12" : "#6c5ce7"}
+          />
+        </TouchableOpacity>
+      </View>
+
       {(overdueCount > 0 || notStartedCount > 0) && (
         <View style={styles.statusBanner}>
           {overdueCount > 0 && (
@@ -126,22 +139,22 @@ export default function Home() {
           )}
         </View>
       )}
+
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No deadlines yet</Text>
-            <Text style={styles.emptyStateSubtext}>Tap Explore to add your first one</Text>
+            <Text style={[styles.emptyStateText, { color: colors.text }]}>No deadlines yet</Text>
+            <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>Tap Add to add your first one</Text>
           </View>
         }
-
         renderItem={({ item }) => (
-          <View style={styles.taskCard}>
+          <View style={[styles.taskCard, { backgroundColor: colors.card }]}>
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>{item.title}</Text>
-              <Text style={styles.taskMeta}>{item.course} • Due: {item.deadline}</Text>
-              <Text style={styles.taskMeta}>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
+              <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.taskMeta, { color: colors.textSecondary }]}>{item.course} • Due: {item.deadline}</Text>
+              <Text style={[styles.taskMeta, { color: colors.textSecondary }]}>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
               {(() => {
                 const label = getTaskLabel(item);
                 return label ? (
@@ -178,13 +191,21 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#000" },
+  container: { flex: 1, padding: 20, paddingTop: 60 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  header: { fontSize: 24, fontWeight: "bold" },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   emptyState: { alignItems: "center", marginTop: 60 },
-  emptyStateText: { fontSize: 18, fontWeight: "600", color: "#333", marginBottom: 6 },
-  emptyStateSubtext: { fontSize: 14, color: "#888" },
+  emptyStateText: { fontSize: 18, fontWeight: "600", marginBottom: 6 },
+  emptyStateSubtext: { fontSize: 14 },
   taskCard: {
-    backgroundColor: "#f0f0f0",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
@@ -193,8 +214,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   taskInfo: { flex: 1 },
-  taskTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
-  taskMeta: { color: "#555", fontSize: 13, marginTop: 2 },
+  taskTitle: { fontSize: 18, fontWeight: "600" },
+  taskMeta: { fontSize: 13, marginTop: 2 },
   taskLabel: { fontWeight: "700", marginTop: 4 },
   actionButtons: { flexDirection: "row", gap: 8 },
   iconButton: {
@@ -206,7 +227,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   deleteIconButton: { backgroundColor: "#ff4d4d" },
-  iconButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   completeBadge: { color: "#2ecc71", fontWeight: "700", marginTop: 4 },
   statusBanner: {
     backgroundColor: "#fff4e5",

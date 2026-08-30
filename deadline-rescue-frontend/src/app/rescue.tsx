@@ -3,12 +3,14 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Activi
 import Purchases from "react-native-purchases";
 import { usePremiumStatus } from "@/hooks/use-premium-status";
 import { API_BASE_URL } from "@/constants/api";
+import { useThemeMode } from "@/hooks/use-theme-mode";
 
 type ScheduleItem = { task: string; hours: number };
 type Schedule = { [day: string]: ScheduleItem[] };
 type UnscheduledItem = { task: string; hours_remaining: number };
 
 function Paywall() {
+  const { colors } = useThemeMode();
   const [purchasing, setPurchasing] = useState(false);
 
   const handlePurchase = async () => {
@@ -36,19 +38,19 @@ function Paywall() {
   };
 
   return (
-    <View style={styles.paywallContainer}>
+    <View style={[styles.paywallContainer, { backgroundColor: colors.background }]}>
       <Text style={styles.paywallEmoji}>🚀</Text>
-      <Text style={styles.paywallTitle}>Premium Planning</Text>
-      <Text style={styles.paywallSubtitle}>
+      <Text style={[styles.paywallTitle, { color: colors.text }]}>Premium Planning</Text>
+      <Text style={[styles.paywallSubtitle, { color: colors.textSecondary }]}>
         Go beyond basic tracking with a full intelligent planning system built
         for students juggling real deadlines.
       </Text>
 
       <View style={styles.paywallFeatures}>
-        <Text style={styles.paywallFeature}>✓ Smart Rescue engine — auto-rebuilds your schedule when you fall behind</Text>
-        <Text style={styles.paywallFeature}>✓ Unlimited tracked deadlines</Text>
-        <Text style={styles.paywallFeature}>✓ Adjustable planning windows</Text>
-        <Text style={styles.paywallFeature}>✓ Overload detection & recovery options</Text>
+        <Text style={[styles.paywallFeature, { color: colors.text }]}>✓ Smart Rescue engine — auto-rebuilds your schedule when you fall behind</Text>
+        <Text style={[styles.paywallFeature, { color: colors.text }]}>✓ Unlimited tracked deadlines</Text>
+        <Text style={[styles.paywallFeature, { color: colors.text }]}>✓ Adjustable planning windows</Text>
+        <Text style={[styles.paywallFeature, { color: colors.text }]}>✓ Overload detection & recovery options</Text>
       </View>
 
       <TouchableOpacity
@@ -67,7 +69,9 @@ function Paywall() {
 }
 
 function RescueEngine() {
+  const { colors } = useThemeMode();
   const [dailyHours, setDailyHours] = useState("2");
+  const [numDaysOverride, setNumDaysOverride] = useState<number | null>(null);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [unscheduled, setUnscheduled] = useState<UnscheduledItem[]>([]);
   const [explanation, setExplanation] = useState<string[]>([]);
@@ -78,13 +82,18 @@ function RescueEngine() {
     setLoading(true);
     setDismissedWarning(false);
     try {
+      const body: any = {
+        daily_available_hours: parseFloat(dailyHours),
+        allow_overflow: allowOverflow,
+      };
+      if (numDaysOverride !== null) {
+        body.num_days = numDaysOverride;
+      }
+
       const response = await fetch(`${API_BASE_URL}/rescue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          daily_available_hours: parseFloat(dailyHours),
-          allow_overflow: allowOverflow,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -93,7 +102,7 @@ function RescueEngine() {
 
       const data = await response.json();
       setSchedule(data.schedule);
-      setUnscheduled(data.unscheduled);
+      setUnscheduled(data.unscheduled || []);
       setExplanation(data.explanation || []);
     } catch (error) {
       console.error(error);
@@ -103,17 +112,47 @@ function RescueEngine() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={styles.header}>Rescue My Plan</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 100 }}>
+      <Text style={[styles.header, { color: colors.text }]}>Rescue My Plan</Text>
 
-      <Text style={styles.label}>Hours available per day</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Hours available per day</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         value={dailyHours}
         onChangeText={setDailyHours}
         keyboardType="numeric"
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textSecondary}
       />
+
+      <Text style={[styles.label, { color: colors.text }]}>Planning window</Text>
+      <View style={styles.chipRow}>
+        {[
+          { label: "3 days", value: 3 },
+          { label: "1 week", value: 7 },
+          { label: "2 weeks", value: 14 },
+          { label: "Auto", value: null },
+        ].map((preset) => (
+          <TouchableOpacity
+            key={preset.label}
+            style={[
+              styles.chip,
+              { borderColor: colors.border, backgroundColor: colors.background },
+              numDaysOverride === preset.value && styles.chipActive,
+            ]}
+            onPress={() => setNumDaysOverride(preset.value)}
+          >
+            <Text
+              style={[
+                styles.chipText,
+                { color: colors.text },
+                numDaysOverride === preset.value && styles.chipTextActive,
+              ]}
+            >
+              {preset.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
         <Text style={styles.rescueButtonText}>
@@ -158,14 +197,14 @@ function RescueEngine() {
       {schedule && (
         <View style={styles.results}>
           {Object.entries(schedule).map(([day, items]) => (
-            <View key={day} style={styles.dayBlock}>
-              <Text style={styles.dayTitle}>Day {parseInt(day) + 1}</Text>
+            <View key={day} style={[styles.dayBlock, { backgroundColor: colors.card }]}>
+              <Text style={[styles.dayTitle, { color: colors.text }]}>Day {parseInt(day) + 1}</Text>
               {items.length === 0 ? (
-                <Text style={styles.emptyDay}>Nothing scheduled</Text>
+                <Text style={[styles.emptyDay, { color: colors.textSecondary }]}>Nothing scheduled</Text>
               ) : (
                 items.map((item, index) => (
                   <View key={index} style={styles.taskRow}>
-                    <Text style={styles.taskText}>{item.task}</Text>
+                    <Text style={{ color: colors.text, fontSize: 15 }}>{item.task}</Text>
                     <Text style={styles.hoursText}>{item.hours}h</Text>
                   </View>
                 ))
@@ -179,11 +218,12 @@ function RescueEngine() {
 }
 
 export default function Rescue() {
+  const { colors } = useThemeMode();
   const { isPremium, loading } = usePremiumStatus();
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#6c5ce7" />
       </View>
     );
@@ -193,19 +233,27 @@ export default function Rescue() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
-  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#000" },
-  label: { fontSize: 14, marginBottom: 4, fontWeight: "600", color: "#000" },
+  container: { flex: 1, padding: 20, paddingTop: 60 },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  label: { fontSize: 14, marginBottom: 4, fontWeight: "600" },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
-    color: "#000",
     marginBottom: 16,
   },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipActive: { backgroundColor: "#6c5ce7", borderColor: "#6c5ce7" },
+  chipText: { fontSize: 13, fontWeight: "600" },
+  chipTextActive: { color: "#fff" },
   rescueButton: {
     backgroundColor: "#6c5ce7",
     padding: 15,
@@ -245,32 +293,29 @@ const styles = StyleSheet.create({
   warningHint: { marginTop: 8, fontSize: 12, color: "#8a5a00", fontStyle: "italic" },
   results: { marginTop: 24 },
   dayBlock: {
-    backgroundColor: "#f0f0f0",
     borderRadius: 10,
     padding: 15,
     marginBottom: 12,
   },
-  dayTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8, color: "#000" },
-  emptyDay: { color: "#888", fontStyle: "italic" },
+  dayTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  emptyDay: { fontStyle: "italic" },
   taskRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 4,
   },
-  taskText: { color: "#000", fontSize: 15 },
   hoursText: { color: "#6c5ce7", fontWeight: "600" },
   paywallContainer: {
     flex: 1,
     padding: 30,
     paddingTop: 100,
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   paywallEmoji: { fontSize: 60, marginBottom: 16 },
-  paywallTitle: { fontSize: 26, fontWeight: "bold", color: "#000", textAlign: "center", marginBottom: 12 },
-  paywallSubtitle: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 24, lineHeight: 22 },
+  paywallTitle: { fontSize: 26, fontWeight: "bold", textAlign: "center", marginBottom: 12 },
+  paywallSubtitle: { fontSize: 15, textAlign: "center", marginBottom: 24, lineHeight: 22 },
   paywallFeatures: { alignSelf: "stretch", marginBottom: 30 },
-  paywallFeature: { fontSize: 15, color: "#333", marginBottom: 10 },
+  paywallFeature: { fontSize: 15, marginBottom: 10 },
   purchaseButton: {
     backgroundColor: "#6c5ce7",
     paddingVertical: 16,

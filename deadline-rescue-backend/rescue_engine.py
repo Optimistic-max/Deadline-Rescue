@@ -42,7 +42,12 @@ def compute_rescue_plan(
 
     for task in sorted_tasks:
         hours_needed = max(task.estimated_hours - task.hours_completed, 0)
-        days_until_deadline = min(max((task.deadline - today).days, 0), num_days)
+        raw_days_left = (task.deadline - today).days
+        if raw_days_left < 0:
+            usable_days = 1  # overdue — today is the only chance to catch up
+        else:
+            usable_days = raw_days_left + 1  # inclusive: day 0 through the deadline day
+        days_until_deadline = min(usable_days, num_days)
 
         for day in range(days_until_deadline):
             if hours_needed <= 0:

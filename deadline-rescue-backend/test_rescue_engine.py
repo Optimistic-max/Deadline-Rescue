@@ -118,3 +118,21 @@ def test_overdue_task_scores_more_urgent_than_due_today():
     due_today_task = make_task("DueToday", date(2026, 8, 29), 2, Priority.medium)  # same day as TODAY
 
     assert urgency_score(overdue_task, TODAY) > urgency_score(due_today_task, TODAY)
+
+def test_task_due_today_gets_scheduled():
+    task_due_today = make_task("DueToday", TODAY, 2, Priority.medium)
+
+    result = compute_rescue_plan(
+        tasks=[task_due_today],
+        daily_available_hours=4,
+        num_days=7,
+        allow_overflow=False,
+        today=TODAY,
+    )
+
+    assert result["unscheduled"] == []
+    assert any(
+        item["task"] == "DueToday"
+        for day_items in result["schedule"].values()
+        for item in day_items
+    )

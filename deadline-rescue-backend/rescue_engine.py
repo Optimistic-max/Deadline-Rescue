@@ -29,7 +29,10 @@ def compute_rescue_plan(
             furthest_deadline = max((t.deadline - today).days for t in tasks)
             num_days = max(furthest_deadline, 1)
         else:
-            num_days = 7  # no tasks yet — arbitrary safe default
+            num_days = 7
+
+        if allow_overflow:
+            num_days += 7  # extra buffer days for overflow to have somewhere to go
 
     sorted_tasks = sorted(tasks, key=lambda t: urgency_score(t, today), reverse=True)
 

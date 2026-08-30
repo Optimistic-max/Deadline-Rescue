@@ -94,7 +94,7 @@ function RescueEngine() {
       const data = await response.json();
       setSchedule(data.schedule);
       setUnscheduled(data.unscheduled);
-      setExplanation(data.explanation);
+      setExplanation(data.explanation || []);
     } catch (error) {
       console.error(error);
     } finally {

@@ -68,9 +68,9 @@ function Paywall() {
 
 function RescueEngine() {
   const [dailyHours, setDailyHours] = useState("2");
-  const [numDays, setNumDays] = useState("7");
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [unscheduled, setUnscheduled] = useState<UnscheduledItem[]>([]);
+  const [explanation, setExplanation] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [dismissedWarning, setDismissedWarning] = useState(false);
 
@@ -83,7 +83,6 @@ function RescueEngine() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           daily_available_hours: parseFloat(dailyHours),
-          num_days: parseInt(numDays),
           allow_overflow: allowOverflow,
         }),
       });
@@ -95,6 +94,7 @@ function RescueEngine() {
       const data = await response.json();
       setSchedule(data.schedule);
       setUnscheduled(data.unscheduled);
+      setExplanation(data.explanation);
     } catch (error) {
       console.error(error);
     } finally {
@@ -115,20 +115,20 @@ function RescueEngine() {
         placeholderTextColor="#999"
       />
 
-      <Text style={styles.label}>Planning window (days)</Text>
-      <TextInput
-        style={styles.input}
-        value={numDays}
-        onChangeText={setNumDays}
-        keyboardType="numeric"
-        placeholderTextColor="#999"
-      />
-
       <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
         <Text style={styles.rescueButtonText}>
           {loading ? "Calculating..." : "Rescue My Plan"}
         </Text>
       </TouchableOpacity>
+
+      {explanation.length > 0 && (
+        <View style={styles.explanationBox}>
+          <Text style={styles.explanationTitle}>💡 Why this plan?</Text>
+          {explanation.map((line, index) => (
+            <Text key={index} style={styles.explanationText}>{line}</Text>
+          ))}
+        </View>
+      )}
 
       {unscheduled.length > 0 && !dismissedWarning && (
         <View style={styles.warningBox}>
@@ -213,6 +213,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rescueButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  explanationBox: {
+    backgroundColor: "#f0edfc",
+    borderColor: "#6c5ce7",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 16,
+  },
+  explanationTitle: { fontWeight: "700", color: "#4a3d99", marginBottom: 8 },
+  explanationText: { color: "#4a3d99", marginBottom: 6, lineHeight: 20 },
   warningBox: {
     backgroundColor: "#fff4e5",
     borderColor: "#ffb84d",

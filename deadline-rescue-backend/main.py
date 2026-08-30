@@ -35,7 +35,7 @@ def delete_task(task_id: int):
 
 class RescueRequest(BaseModel):
     daily_available_hours: float
-    num_days: int = 7
+    num_days: int | None = None
     allow_overflow: bool = False
 
 

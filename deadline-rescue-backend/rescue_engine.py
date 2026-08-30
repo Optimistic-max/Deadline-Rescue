@@ -20,10 +20,17 @@ def urgency_score(task: Task, today: date) -> float:
 def compute_rescue_plan(
     tasks: list[Task],
     daily_available_hours: float,
-    num_days: int,
     allow_overflow: bool,
     today: date,
+    num_days: int | None = None,
 ) -> dict:
+    if num_days is None:
+        if tasks:
+            furthest_deadline = max((t.deadline - today).days for t in tasks)
+            num_days = max(furthest_deadline, 1)
+        else:
+            num_days = 7  # no tasks yet — arbitrary safe default
+
     sorted_tasks = sorted(tasks, key=lambda t: urgency_score(t, today), reverse=True)
 
     schedule = {i: [] for i in range(num_days)}
@@ -55,5 +62,60 @@ def compute_rescue_plan(
 
         if hours_needed > 0:
             unscheduled.append({"task": task.title, "hours_remaining": hours_needed})
+    explanation = build_explanation(
+        tasks, schedule, unscheduled, daily_available_hours, num_days, today
+    )
 
-    return {"schedule": schedule, "unscheduled": unscheduled}
+    return {"schedule": schedule, "unscheduled": unscheduled, "explanation": explanation}
+
+def build_explanation(
+    tasks: list[Task],
+    schedule: dict,
+    unscheduled: list[dict],
+    daily_available_hours: float,
+    num_days: int,
+    today: date,
+) -> list[str]:
+    lines = []
+
+    total_hours_needed = sum(
+        max(t.estimated_hours - t.hours_completed, 0) for t in tasks
+    )
+    total_capacity = daily_available_hours * num_days
+
+    if total_hours_needed <= total_capacity:
+        lines.append(
+            f"You have {total_hours_needed:.1f} hours of work and "
+            f"{total_capacity:.1f} hours available — everything fits."
+        )
+    else:
+        shortfall = total_hours_needed - total_capacity
+        lines.append(
+            f"You have {total_hours_needed:.1f} hours of work but only "
+            f"{total_capacity:.1f} hours available over the next {num_days} days — "
+            f"you're short by {shortfall:.1f} hours."
+        )
+
+    overdue_tasks = [t for t in tasks if (t.deadline - today).days < 0]
+    if overdue_tasks:
+        names = ", ".join(t.title for t in overdue_tasks)
+        lines.append(f"{names} {'is' if len(overdue_tasks) == 1 else 'are'} already overdue and scheduled first.")
+
+    sorted_tasks = sorted(tasks, key=lambda t: urgency_score(t, today), reverse=True)
+    if sorted_tasks:
+        top_task = sorted_tasks[0]
+        days_left = (top_task.deadline - today).days
+        day_word = "day" if days_left == 1 else "days"
+        lines.append(
+            f"\"{top_task.title}\" is scheduled first — it has the highest urgency "
+            f"score based on its {top_task.priority.value} priority and {days_left} {day_word} remaining."
+        )
+
+    if unscheduled:
+        total_unscheduled = sum(item["hours_remaining"] for item in unscheduled)
+        lines.append(
+            f"{total_unscheduled:.1f} hours of work couldn't be scheduled in time. "
+            f"Consider allowing overflow, increasing your available hours, or reducing scope."
+        )
+
+    return lines

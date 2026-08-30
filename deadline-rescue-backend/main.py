@@ -32,6 +32,14 @@ def delete_task(task_id: int):
     tasks = [t for t in tasks if t.id != task_id]
     return {"deleted": task_id}
 
+@app.patch("/tasks/{task_id}/complete")
+def mark_task_complete(task_id: int):
+    for task in tasks:
+        if task.id == task_id:
+            task.hours_completed = task.estimated_hours
+            return task
+    return {"error": "Task not found"}
+
 
 class RescueRequest(BaseModel):
     daily_available_hours: float

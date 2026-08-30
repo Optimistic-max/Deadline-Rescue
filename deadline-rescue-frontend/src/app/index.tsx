@@ -36,7 +36,17 @@ export default function Home() {
       fetchTasks();
     }, [])
   );
-
+  const handleComplete = async (taskId: number) => {
+    try {
+      await fetch(`${API_BASE_URL}/tasks/${taskId}/complete`, {
+        method: "PATCH",
+      });
+      fetchTasks();
+    } catch (error) {
+      console.error("Error marking task complete:", error);
+      Alert.alert("Error", "Could not mark task complete.");
+    }
+  };
   const handleDelete = (taskId: number, taskTitle: string) => {
     Alert.alert(
       "Delete task?",
@@ -62,6 +72,7 @@ export default function Home() {
     );
   };
 
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -85,11 +96,23 @@ export default function Home() {
 
         renderItem={({ item }) => (
           <View style={styles.taskCard}>
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>{item.title}</Text>
-              <Text>{item.course} • Due: {item.deadline}</Text>
-              <Text>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
-            </View>
+          <View style={styles.taskInfo}>
+            <Text style={styles.taskTitle}>{item.title}</Text>
+            <Text>{item.course} • Due: {item.deadline}</Text>
+            <Text>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
+            {item.hours_completed >= item.estimated_hours && (
+              <Text style={styles.completeBadge}>✓ Completed</Text>
+            )}
+          </View>
+          <View style={styles.actionButtons}>
+            {item.hours_completed < item.estimated_hours && (
+              <TouchableOpacity
+                style={styles.completeButton}
+                onPress={() => handleComplete(item.id)}
+              >
+                <Text style={styles.completeButtonText}>Complete</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={() => handleDelete(item.id, item.title)}
@@ -97,6 +120,7 @@ export default function Home() {
               <Text style={styles.deleteButtonText}>Delete</Text>
             </TouchableOpacity>
           </View>
+        </View>
         )}
       />
     </View>
@@ -120,6 +144,16 @@ const styles = StyleSheet.create({
   },
   taskInfo: { flex: 1 },
   taskTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
+  
+  actionButtons: { flexDirection: "column", gap: 6 },
+  completeButton: {
+    backgroundColor: "#2ecc71",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  completeButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  completeBadge: { color: "#2ecc71", fontWeight: "700", marginTop: 4 },
   deleteButton: {
     backgroundColor: "#ff4d4d",
     paddingVertical: 8,

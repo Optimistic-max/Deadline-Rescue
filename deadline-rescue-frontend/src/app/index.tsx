@@ -16,6 +16,8 @@ type Task = {
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [overdueCount, setOverdueCount] = useState(0);
+  const [notStartedCount, setNotStartedCount] = useState(0);
 
   const fetchTasks = () => {
     setLoading(true);
@@ -29,6 +31,14 @@ export default function Home() {
         console.error("Error fetching tasks:", error);
         setLoading(false);
       });
+
+    fetch(`${API_BASE_URL}/tasks/status`)
+      .then((response) => response.json())
+      .then((data) => {
+        setOverdueCount(data.overdue.length);
+        setNotStartedCount(data.not_started.length);
+      })
+      .catch((error) => console.error("Error fetching status:", error));
   };
 
   useFocusEffect(
@@ -84,6 +94,20 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>My Deadlines</Text>
+      {(overdueCount > 0 || notStartedCount > 0) && (
+        <View style={styles.statusBanner}>
+          {overdueCount > 0 && (
+            <Text style={styles.statusText}>
+              ⚠️ {overdueCount} task{overdueCount > 1 ? "s" : ""} overdue
+            </Text>
+          )}
+          {notStartedCount > 0 && (
+            <Text style={styles.statusText}>
+              ⏰ {notStartedCount} task{notStartedCount > 1 ? "s" : ""} not started, due soon
+            </Text>
+          )}
+        </View>
+      )}
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id.toString()}
@@ -161,5 +185,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 10,
   },
+  statusBanner: {
+    backgroundColor: "#fff4e5",
+    borderColor: "#ffb84d",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  statusText: { color: "#8a5a00", fontWeight: "600", marginBottom: 4 },
   deleteButtonText: { color: "#fff", fontWeight: "600" },
 });

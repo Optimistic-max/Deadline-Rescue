@@ -4,6 +4,7 @@ from datetime import date
 
 from models import Priority, Task
 from rescue_engine import compute_rescue_plan
+from rescue_engine import urgency_score
 
 app = FastAPI()
 
@@ -40,6 +41,25 @@ def mark_task_complete(task_id: int):
             return task
     return {"error": "Task not found"}
 
+# --- Home Screen Intelligence Endpoint ---
+@app.get("/tasks/status")
+def get_task_status():
+    today = date.today()
+    overdue = []
+    not_started = []
+
+    for task in tasks:
+        if task.hours_completed >= task.estimated_hours:
+            continue  # skip completed tasks
+
+        days_left = (task.deadline - today).days
+        if days_left < 0:
+            overdue.append(task.title)
+
+        if task.hours_completed == 0 and days_left <= 2:
+            not_started.append(task.title)
+
+    return {"overdue": overdue, "not_started": not_started}
 
 class RescueRequest(BaseModel):
     daily_available_hours: float

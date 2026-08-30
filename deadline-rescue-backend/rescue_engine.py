@@ -6,13 +6,16 @@ PRIORITY_WEIGHT = {"low": 1, "medium": 2, "high": 3}
 
 def urgency_score(task: Task, today: date) -> float:
     days_left = (task.deadline - today).days
-    days_left = max(days_left, 0.5)
+
+    if days_left < 0:
+        days_left = 0.1  # overdue — treat as extremely urgent, not average
+    elif days_left == 0:
+        days_left = 0.5  # due today — avoid divide-by-zero
 
     hours_remaining = max(task.estimated_hours - task.hours_completed, 0)
     weight = PRIORITY_WEIGHT[task.priority.lower()]
 
     return (hours_remaining * weight) / days_left
-
 
 def compute_rescue_plan(
     tasks: list[Task],

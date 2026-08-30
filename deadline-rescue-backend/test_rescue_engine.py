@@ -112,3 +112,9 @@ def test_empty_task_list_returns_empty_schedule():
 
     assert result["unscheduled"] == []
     assert all(day == [] for day in result["schedule"].values())
+
+def test_overdue_task_scores_more_urgent_than_due_today():
+    overdue_task = make_task("Overdue", date(2026, 8, 27), 2, Priority.medium)  # 2 days before TODAY
+    due_today_task = make_task("DueToday", date(2026, 8, 29), 2, Priority.medium)  # same day as TODAY
+
+    assert urgency_score(overdue_task, TODAY) > urgency_score(due_today_task, TODAY)

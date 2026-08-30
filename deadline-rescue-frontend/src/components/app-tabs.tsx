@@ -21,9 +21,9 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Add</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
+          src={require('@/assets/images/tabIcons/plus-icon.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
@@ -31,7 +31,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="rescue">
         <NativeTabs.Trigger.Label>Rescue</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
+          src={require('@/assets/images/tabIcons/rescue-icon.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>

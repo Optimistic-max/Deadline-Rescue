@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
+import { Ionicons } from "@expo/vector-icons";
 
 type Task = {
   id: number;
@@ -137,42 +138,39 @@ export default function Home() {
 
         renderItem={({ item }) => (
           <View style={styles.taskCard}>
-          <View style={styles.taskInfo}>
-            <Text style={styles.taskTitle}>{item.title}</Text>
-            <Text>{item.course} • Due: {item.deadline}</Text>
-            <Text>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
-            {(() => {
-              const label = getTaskLabel(item);
-              return label ? (
-                <Text style={[styles.taskLabel, { color: label.color }]}>
-                  {label.icon} {label.text}
-                </Text>
-              ) : null;
-            })()}
-            {item.hours_completed >= item.estimated_hours && (
-              <Text style={styles.completeBadge}>✓ Completed</Text>
-            )}
-            {item.hours_completed >= item.estimated_hours && (
-              <Text style={styles.completeBadge}>✓ Completed</Text>
-            )}
-          </View>
-          <View style={styles.actionButtons}>
-            {item.hours_completed < item.estimated_hours && (
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>{item.title}</Text>
+              <Text style={styles.taskMeta}>{item.course} • Due: {item.deadline}</Text>
+              <Text style={styles.taskMeta}>{item.estimated_hours}h estimated • Priority: {item.priority}</Text>
+              {(() => {
+                const label = getTaskLabel(item);
+                return label ? (
+                  <Text style={[styles.taskLabel, { color: label.color }]}>
+                    {label.icon} {label.text}
+                  </Text>
+                ) : null;
+              })()}
+              {item.hours_completed >= item.estimated_hours && (
+                <Text style={styles.completeBadge}>✓ Completed</Text>
+              )}
+            </View>
+            <View style={styles.actionButtons}>
+              {item.hours_completed < item.estimated_hours && (
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() => handleComplete(item.id)}
+                >
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
-                style={styles.completeButton}
-                onPress={() => handleComplete(item.id)}
+                style={[styles.iconButton, styles.deleteIconButton]}
+                onPress={() => handleDelete(item.id, item.title)}
               >
-                <Text style={styles.completeButtonText}>Complete</Text>
+                <Ionicons name="trash-outline" size={18} color="#fff" />
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item.id, item.title)}
-            >
-              <Text style={styles.deleteButtonText}>Delete</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
         )}
       />
     </View>
@@ -196,24 +194,20 @@ const styles = StyleSheet.create({
   },
   taskInfo: { flex: 1 },
   taskTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
+  taskMeta: { color: "#555", fontSize: 13, marginTop: 2 },
   taskLabel: { fontWeight: "700", marginTop: 4 },
-  
-  actionButtons: { flexDirection: "column", gap: 6 },
-  completeButton: {
+  actionButtons: { flexDirection: "row", gap: 8 },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#2ecc71",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  completeButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  deleteIconButton: { backgroundColor: "#ff4d4d" },
+  iconButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   completeBadge: { color: "#2ecc71", fontWeight: "700", marginTop: 4 },
-  deleteButton: {
-    backgroundColor: "#ff4d4d",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
   statusBanner: {
     backgroundColor: "#fff4e5",
     borderColor: "#ffb84d",
@@ -223,5 +217,4 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statusText: { color: "#8a5a00", fontWeight: "600", marginBottom: 4 },
-  deleteButtonText: { color: "#fff", fontWeight: "600" },
 });

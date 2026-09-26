@@ -12,6 +12,7 @@ type UnscheduledItem = { task: string; hours_remaining: number };
 function Paywall() {
   const { colors } = useThemeMode();
   const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const handlePurchase = async () => {
     setPurchasing(true);
@@ -34,6 +35,29 @@ function Paywall() {
       }
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const customerInfo = await Purchases.restorePurchases();
+      const hasPremium =
+        typeof customerInfo.entitlements.active["deadline_rescue_premium"] !== "undefined";
+
+      if (hasPremium) {
+        Alert.alert("Purchases restored", "Your Premium Planning access is active again.");
+      } else {
+        Alert.alert(
+          "Nothing to restore",
+          "We couldn't find a previous purchase on this account."
+        );
+      }
+    } catch (error) {
+      Alert.alert("Restore failed", "Something went wrong. Please try again.");
+      console.error(error);
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -64,6 +88,16 @@ function Paywall() {
           <Text style={styles.purchaseButtonText}>Upgrade for $9.99/month</Text>
         )}
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.restoreButton}
+        onPress={handleRestore}
+        disabled={restoring}
+      >
+        <Text style={[styles.restoreButtonText, { color: colors.textSecondary }]}>
+          {restoring ? "Restoring..." : "Restore Purchases"}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -79,11 +113,17 @@ function RescueEngine() {
   const [dismissedWarning, setDismissedWarning] = useState(false);
 
   const runRescue = async (allowOverflow: boolean) => {
+    const hours = parseFloat(dailyHours);
+    if (isNaN(hours) || hours <= 0) {
+      Alert.alert("Missing info", "Please enter how many hours you have available per day.");
+      return;
+    }
+
     setLoading(true);
     setDismissedWarning(false);
     try {
       const body: any = {
-        daily_available_hours: parseFloat(dailyHours),
+        daily_available_hours: hours,
         allow_overflow: allowOverflow,
       };
       if (numDaysOverride !== null) {
@@ -154,7 +194,11 @@ function RescueEngine() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.rescueButton} onPress={() => runRescue(false)}>
+      <TouchableOpacity
+        style={styles.rescueButton}
+        onPress={() => runRescue(false)}
+        disabled={loading}
+      >
         <Text style={styles.rescueButtonText}>
           {loading ? "Calculating..." : "Rescue My Plan"}
         </Text>
@@ -325,4 +369,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   purchaseButtonText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  restoreButton: { marginTop: 16, paddingVertical: 10, alignItems: "center" },
+  restoreButtonText: { fontSize: 14, fontWeight: "600" },
 });

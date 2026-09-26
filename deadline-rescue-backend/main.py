@@ -85,7 +85,7 @@ def get_task_status(db: Session = Depends(get_db)):
         days_left = (task.deadline - today).days
         if days_left < 0:
             overdue.append(task.title)
-        if task.hours_completed == 0 and days_left <= 2:
+        elif task.hours_completed == 0 and days_left <= 2:
             not_started.append(task.title)
 
     return {"overdue": overdue, "not_started": not_started}

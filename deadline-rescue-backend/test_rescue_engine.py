@@ -136,3 +136,103 @@ def test_task_due_today_gets_scheduled():
         for day_items in result["schedule"].values()
         for item in day_items
     )
+
+
+def test_explanation_says_everything_fits_only_when_nothing_unscheduled():
+    tasks = [
+        make_task("A", date(2026, 9, 3), 2, Priority.medium),
+        make_task("B", date(2026, 9, 4), 2, Priority.medium),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=4, num_days=7,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert result["unscheduled"] == []
+    assert any("everything fits" in line for line in result["explanation"])
+
+
+def test_explanation_does_not_claim_fits_when_deadline_window_too_tight():
+    # Plenty of capacity in total (5h/day x 10 days = 50h for 13h of work),
+    # but "Tight" can't fit 12h into the two days before its own deadline.
+    # The explanation must not say "everything fits" here.
+    tasks = [
+        make_task("Tight", date(2026, 8, 30), 12, Priority.high),
+        make_task("Later", date(2026, 9, 8), 1, Priority.low),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=5,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert result["unscheduled"] != []
+    assert not any("everything fits" in line for line in result["explanation"])
+    assert any(
+        "couldn't be fit before their deadlines" in line
+        for line in result["explanation"]
+    )
+
+
+def test_explanation_ignores_completed_tasks_when_naming_first_task():
+    completed = make_task("Completed", date(2026, 8, 30), 3, Priority.high, hours_completed=3)
+    active = make_task("Active", date(2026, 9, 5), 2, Priority.low)
+
+    result = compute_rescue_plan(
+        tasks=[completed, active], daily_available_hours=4, num_days=7,
+        allow_overflow=False, today=TODAY,
+    )
+
+    scheduled_first_lines = [
+        line for line in result["explanation"] if "is scheduled first" in line
+    ]
+    assert len(scheduled_first_lines) == 1
+    assert "Active" in scheduled_first_lines[0]
+    assert "Completed" not in scheduled_first_lines[0]
+
+
+def test_explanation_omits_first_task_line_when_all_tasks_complete():
+    tasks = [
+        make_task("Done", date(2026, 9, 1), 3, Priority.high, hours_completed=3),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=4, num_days=3,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert not any("is scheduled first" in line for line in result["explanation"])
+
+
+def test_explanation_describes_overdue_task_without_negative_days():
+    tasks = [
+        make_task("Late", date(2026, 8, 26), 4, Priority.high),  # 3 days before TODAY
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=2,
+        allow_overflow=False, today=TODAY,
+    )
+
+    first_task_line = next(
+        line for line in result["explanation"] if "is scheduled first" in line
+    )
+    assert "already overdue" in first_task_line
+    assert "-3" not in first_task_line
+
+
+def test_scheduled_hours_are_rounded_for_display():
+    tasks = [
+        make_task("Fractional", date(2026, 8, 31), 1.0, Priority.medium),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=0.3, num_days=5,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert result["unscheduled"][0]["hours_remaining"] == 0.1
+    for day_items in result["schedule"].values():
+        for item in day_items:
+            assert item["hours"] == round(item["hours"], 2)

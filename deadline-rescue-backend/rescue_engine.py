@@ -54,7 +54,7 @@ def compute_rescue_plan(
                 break
             allocate = min(hours_left_today[day], hours_needed)
             if allocate > 0:
-                schedule[day].append({"task": task.title, "hours": allocate})
+                schedule[day].append({"task": task.title, "hours": round(allocate, 2)})
                 hours_left_today[day] -= allocate
                 hours_needed -= allocate
 
@@ -64,12 +64,14 @@ def compute_rescue_plan(
                     break
                 allocate = min(hours_left_today[day], hours_needed)
                 if allocate > 0:
-                    schedule[day].append({"task": task.title, "hours": allocate})
+                    schedule[day].append({"task": task.title, "hours": round(allocate, 2)})
                     hours_left_today[day] -= allocate
                     hours_needed -= allocate
 
         if hours_needed > 0:
-            unscheduled.append({"task": task.title, "hours_remaining": hours_needed})
+            unscheduled.append(
+                {"task": task.title, "hours_remaining": round(hours_needed, 2)}
+            )
     explanation = build_explanation(
         tasks, schedule, unscheduled, daily_available_hours, num_days, today
     )
@@ -91,17 +93,17 @@ def build_explanation(
     )
     total_capacity = daily_available_hours * num_days
 
-    if total_hours_needed <= total_capacity:
+    if not unscheduled:
         lines.append(
             f"You have {total_hours_needed:.1f} hours of work and "
             f"{total_capacity:.1f} hours available — everything fits."
         )
     else:
-        shortfall = total_hours_needed - total_capacity
+        total_unscheduled_hours = sum(item["hours_remaining"] for item in unscheduled)
         lines.append(
             f"You have {total_hours_needed:.1f} hours of work but only "
             f"{total_capacity:.1f} hours available over the next {num_days} days — "
-            f"you're short by {shortfall:.1f} hours."
+            f"{total_unscheduled_hours:.1f} hours couldn't be fit before their deadlines."
         )
 
     overdue_tasks = [t for t in tasks if (t.deadline - today).days < 0]
@@ -109,14 +111,22 @@ def build_explanation(
         names = ", ".join(t.title for t in overdue_tasks)
         lines.append(f"{names} {'is' if len(overdue_tasks) == 1 else 'are'} already overdue and scheduled first.")
 
-    sorted_tasks = sorted(tasks, key=lambda t: urgency_score(t, today), reverse=True)
+    active_tasks = [t for t in tasks if (t.estimated_hours - t.hours_completed) > 0]
+    sorted_tasks = sorted(active_tasks, key=lambda t: urgency_score(t, today), reverse=True)
     if sorted_tasks:
         top_task = sorted_tasks[0]
         days_left = (top_task.deadline - today).days
-        day_word = "day" if days_left == 1 else "days"
+        if days_left < 0:
+            when_text = "already overdue"
+        elif days_left == 0:
+            when_text = "due today"
+        elif days_left == 1:
+            when_text = "1 day remaining"
+        else:
+            when_text = f"{days_left} days remaining"
         lines.append(
             f"\"{top_task.title}\" is scheduled first — it has the highest urgency "
-            f"score based on its {top_task.priority.value} priority and {days_left} {day_word} remaining."
+            f"score based on its {top_task.priority.value} priority and {when_text}."
         )
 
     if unscheduled:

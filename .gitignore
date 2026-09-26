@@ -6,6 +6,9 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Local SQLite database (created automatically on first run)
+*.db
+
 # Environment variables (API keys, secrets)
 .env
 .env.local

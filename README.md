@@ -121,7 +121,7 @@ By default the app points at the live backend deployed on Render. To point it at
 
 ## Known limitations
 
-- **Persistence on Render specifically doesn't survive redeploys** — SQLite's database file lives inside Render's container filesystem, which is rebuilt from scratch on each deploy. Data survives local development restarts and idle cold-starts, but not a fresh deploy. A hosted database (e.g. Render's Postgres) would resolve this; not implemented here since it isn't required for this build.
+- **Persistence on Render is not durable** — SQLite's database file lives inside Render's container filesystem, which is ephemeral. Data survives restarts during local development, but on Render it is lost both on a fresh deploy and on the free tier's idle spin-down (which is a full container restart, so the SQLite file is recreated empty). In practice this means the hosted demo may start with an empty task list. A hosted database (e.g. Render's Postgres) would resolve this; not implemented here since it isn't required for this build.
 - **No way to log partial progress** — a task is either not started or fully complete; there's no in-between hours-logged state exposed in the UI (the backend model supports it via `hours_completed`).
 - No account system — all data is shared across anyone using the same backend instance.
 

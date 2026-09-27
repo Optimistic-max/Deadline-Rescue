@@ -205,6 +205,22 @@ def test_explanation_omits_first_task_line_when_all_tasks_complete():
     assert not any("is scheduled first" in line for line in result["explanation"])
 
 
+def test_explanation_pluralizes_planning_window():
+    task = make_task("Big", date(2026, 8, 29), 10, Priority.high)  # due today
+
+    one_day = compute_rescue_plan(
+        tasks=[task], daily_available_hours=2, num_days=1,
+        allow_overflow=False, today=TODAY,
+    )
+    many_days = compute_rescue_plan(
+        tasks=[task], daily_available_hours=2, num_days=3,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert "over the next 1 day —" in one_day["explanation"][0]
+    assert "over the next 3 days —" in many_days["explanation"][0]
+
+
 def test_explanation_describes_overdue_task_without_negative_days():
     tasks = [
         make_task("Late", date(2026, 8, 26), 4, Priority.high),  # 3 days before TODAY

@@ -100,9 +100,10 @@ def build_explanation(
         )
     else:
         total_unscheduled_hours = sum(item["hours_remaining"] for item in unscheduled)
+        day_word = "day" if num_days == 1 else "days"
         lines.append(
             f"You have {total_hours_needed:.1f} hours of work but only "
-            f"{total_capacity:.1f} hours available over the next {num_days} days — "
+            f"{total_capacity:.1f} hours available over the next {num_days} {day_word} — "
             f"{total_unscheduled_hours:.1f} hours couldn't be fit before their deadlines."
         )
 

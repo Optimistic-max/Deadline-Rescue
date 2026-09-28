@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { usePremiumStatus } from "@/hooks/use-premium-status";
 import { API_BASE_URL } from "@/constants/api";
 import { useThemeMode } from "@/hooks/use-theme-mode";
+import { toLocalDateString } from "@/utils/date";
 
 export default function AddDeadline() {
   const router = useRouter();
@@ -19,12 +20,7 @@ export default function AddDeadline() {
   const [estimatedHours, setEstimatedHours] = useState("");
   const [priority, setPriority] = useState("medium");
 
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  const formatDate = toLocalDateString;
 
   const handleSubmit = async () => {
     if (!title || !course || !estimatedHours) {

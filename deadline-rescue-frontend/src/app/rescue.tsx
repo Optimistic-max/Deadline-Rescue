@@ -4,6 +4,7 @@ import Purchases from "react-native-purchases";
 import { usePremiumStatus } from "@/hooks/use-premium-status";
 import { API_BASE_URL } from "@/constants/api";
 import { useThemeMode } from "@/hooks/use-theme-mode";
+import { todayLocalDateString } from "@/utils/date";
 
 type ScheduleItem = { task: string; hours: number };
 type Schedule = { [day: string]: ScheduleItem[] };
@@ -125,6 +126,7 @@ function RescueEngine() {
       const body: any = {
         daily_available_hours: hours,
         allow_overflow: allowOverflow,
+        today: todayLocalDateString(),
       };
       if (numDaysOverride !== null) {
         body.num_days = numDaysOverride;

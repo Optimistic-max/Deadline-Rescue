@@ -4,6 +4,7 @@ import { useFocusEffect } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeMode } from "@/hooks/use-theme-mode";
+import { parseLocalDate, todayLocalDateString } from "@/utils/date";
 
 type Task = {
   id: number;
@@ -20,7 +21,7 @@ function getTaskLabel(task: Task): { icon: string; text: string; color: string }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const deadline = new Date(task.deadline);
+  const deadline = parseLocalDate(task.deadline);
   const daysLeft = Math.round((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (daysLeft < 0) {
@@ -52,7 +53,7 @@ export default function Home() {
         setLoading(false);
       });
 
-    fetch(`${API_BASE_URL}/tasks/status`)
+    fetch(`${API_BASE_URL}/tasks/status?today=${todayLocalDateString()}`)
       .then((response) => response.json())
       .then((data) => {
         setOverdueCount(data.overdue.length);

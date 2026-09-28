@@ -205,6 +205,28 @@ def test_explanation_omits_first_task_line_when_all_tasks_complete():
     assert not any("is scheduled first" in line for line in result["explanation"])
 
 
+def test_task_due_on_the_given_today_is_not_treated_as_overdue():
+    # Guards the UTC/local-date bug: the caller's "today" decides what is
+    # overdue, so a task due on that date must not be scored or described as
+    # already overdue just because the server's clock has rolled over.
+    task = make_task("DueToday", TODAY, 2, Priority.medium)
+
+    result = compute_rescue_plan(
+        tasks=[task], daily_available_hours=4, num_days=3,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert not any("already overdue" in line for line in result["explanation"])
+    assert any("due today" in line for line in result["explanation"])
+
+    # A day later the same task really is overdue.
+    next_day = compute_rescue_plan(
+        tasks=[task], daily_available_hours=4, num_days=3,
+        allow_overflow=False, today=date(2026, 8, 30),
+    )
+    assert any("already overdue" in line for line in next_day["explanation"])
+
+
 def test_explanation_pluralizes_planning_window():
     task = make_task("Big", date(2026, 8, 29), 10, Priority.high)  # due today
 

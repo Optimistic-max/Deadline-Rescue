@@ -72,8 +72,14 @@ def mark_task_complete(task_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/tasks/status")
-def get_task_status(db: Session = Depends(get_db)):
-    today = date.today()
+def get_task_status(today: date | None = None, db: Session = Depends(get_db)):
+    # "Overdue" depends on what day it is for the user, not for the server.
+    # This backend runs in UTC on Render, so a client in a negative UTC
+    # offset would see today's tasks marked overdue late in the evening.
+    # The client sends its own local date; date.today() is only a fallback.
+    if today is None:
+        today = date.today()
+
     overdue = []
     not_started = []
 
@@ -95,6 +101,7 @@ class RescueRequest(BaseModel):
     daily_available_hours: float
     num_days: int | None = None
     allow_overflow: bool = False
+    today: date | None = None
 
 
 @app.post("/rescue")
@@ -107,5 +114,5 @@ def rescue_plan(request: RescueRequest, db: Session = Depends(get_db)):
         daily_available_hours=request.daily_available_hours,
         num_days=request.num_days,
         allow_overflow=request.allow_overflow,
-        today=date.today(),
+        today=request.today or date.today(),
     )

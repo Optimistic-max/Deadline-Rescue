@@ -205,6 +205,37 @@ def test_explanation_omits_first_task_line_when_all_tasks_complete():
     assert not any("is scheduled first" in line for line in result["explanation"])
 
 
+def test_auto_window_includes_the_furthest_deadline_day():
+    # 6h of work due tomorrow with 4h/day available fits across today and
+    # tomorrow (8h). The auto window must not stop at today and report a
+    # shortfall that doesn't exist.
+    tasks = [
+        make_task("DueTomorrow", date(2026, 8, 30), 6, Priority.high),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=4,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert len(result["schedule"]) == 2
+    assert result["unscheduled"] == []
+
+
+def test_auto_window_covers_a_single_due_today_task():
+    tasks = [
+        make_task("DueToday", TODAY, 2, Priority.medium),
+    ]
+
+    result = compute_rescue_plan(
+        tasks=tasks, daily_available_hours=2,
+        allow_overflow=False, today=TODAY,
+    )
+
+    assert len(result["schedule"]) == 1
+    assert result["unscheduled"] == []
+
+
 def test_task_due_on_the_given_today_is_not_treated_as_overdue():
     # Guards the UTC/local-date bug: the caller's "today" decides what is
     # overdue, so a task due on that date must not be scored or described as

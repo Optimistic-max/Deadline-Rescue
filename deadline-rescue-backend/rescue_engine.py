@@ -27,7 +27,9 @@ def compute_rescue_plan(
     if num_days is None:
         if tasks:
             furthest_deadline = max((t.deadline - today).days for t in tasks)
-            num_days = max(furthest_deadline, 1)
+            # +1 because furthest_deadline is a day difference: a task due
+            # tomorrow gives 1, but the window needs today *and* tomorrow.
+            num_days = max(furthest_deadline + 1, 1)
         else:
             num_days = 7
 

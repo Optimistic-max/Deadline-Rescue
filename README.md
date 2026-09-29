@@ -45,6 +45,8 @@ Deadline Rescue is free to use for basic task tracking (up to 5 tasks). The **Pr
 
 RevenueCat entitlement: `deadline_rescue_premium` · Product: `monthly` · Offering: `default`
 
+Note: This build runs against RevenueCat's Test Store (sandbox), since submitting to Next Gen doesn't require a live App Store or Google Play developer account. Purchases are simulated but the full entitlement flow — purchase, unlock, restore — works exactly as it would with real store keys.
+
 ## Tech stack
 
 | Layer | Technology |
